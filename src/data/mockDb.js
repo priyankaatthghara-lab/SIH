@@ -202,6 +202,8 @@ export const initialMockData = {
   userState: {
     // Booked mentor sessions saved here
     mentorBookings: [],
+    mentorAssignments: [],
+    assignmentEmails: [],
 
     // Registered event IDs
     eventRegistrations: [],

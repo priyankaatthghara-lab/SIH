@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Star, Calendar, Users, Search, Briefcase, Clock,
-  CheckCircle2, X, BookOpen, Zap, MapPin, Video, Building2
+  CheckCircle2, X, BookOpen, Zap, MapPin, Video, Building2, UserCheck, Mail
 } from "lucide-react";
 import { useStudent } from "../../context/StudentContext";
 import {
@@ -10,6 +10,8 @@ import {
   bookMentorSession,
   getMentorBookings,
   cancelMentorBooking,
+  assignMentorToStudent,
+  getAssignmentsForStudent,
 } from "../../services/storageService";
 
 // ── Skill-match helper ────────────────────────────────────────
@@ -150,8 +152,68 @@ const BookingModal = ({ mentor, onClose, onBook, existingBookings }) => {
   );
 };
 
+const AssignmentModal = ({ mentor, student, gaps, onClose, onAssign }) => {
+  const [skillId, setSkillId] = useState(gaps[0]?.id || "");
+  const [note, setNote] = useState("");
+  const selectedSkill = gaps.find((skill) => skill.id === skillId);
+
+  const handleConfirm = () => {
+    if (!selectedSkill) return;
+    onAssign({
+      mentorId: mentor.id,
+      mentorName: mentor.name,
+      mentorCompany: mentor.company,
+      studentId: student.id,
+      studentName: student.name,
+      studentEmail: student.email,
+      skillId: selectedSkill.id,
+      skillName: selectedSkill.name,
+      note: note.trim(),
+    });
+  };
+
+  return (
+    <div style={m.overlay} onClick={onClose}>
+      <div style={m.modal} onClick={(event) => event.stopPropagation()}>
+        <div style={m.modalHeader}>
+          <div>
+            <h2 style={m.modalTitle}>Assign Mentor</h2>
+            <p style={m.modalSub}>{student.name} · {mentor.name}</p>
+          </div>
+          <button style={m.closeBtn} onClick={onClose}><X size={18} /></button>
+        </div>
+        {gaps.length === 0 ? (
+          <div style={m.emptyAssignment}>
+            <CheckCircle2 size={28} color="#15803D" />
+            <p>No open skill gaps remain for this student.</p>
+          </div>
+        ) : (
+          <>
+            <div style={m.formBody}>
+              <label style={m.fieldLabel} htmlFor="gap-select">Skill gap to support</label>
+              <select id="gap-select" value={skillId} onChange={(event) => setSkillId(event.target.value)} style={m.select}>
+                {gaps.map((skill) => (
+                  <option key={skill.id} value={skill.id}>{skill.name} ({skill.required - skill.current} pts)</option>
+                ))}
+              </select>
+              <label style={m.fieldLabel} htmlFor="assignment-note">Note (optional)</label>
+              <textarea id="assignment-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add guidance for the student..." style={m.textarea} />
+            </div>
+            <div style={m.modalFooter}>
+              <button style={m.cancelBtn} onClick={onClose}>Cancel</button>
+              <button style={m.confirmBtn} onClick={handleConfirm} disabled={!selectedSkill}>
+                <UserCheck size={14} /> Assign &amp; Notify Student
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ── Mentor Card ───────────────────────────────────────────────
-const MentorCard = ({ mentor, skillMatches, onBook, isBooked }) => {
+const MentorCard = ({ mentor, skillMatches, onBook, onAssign, isBooked, assignedSkills, studentName }) => {
   return (
     <div style={c.card}>
       {/* Top: avatar + info */}
@@ -205,7 +267,16 @@ const MentorCard = ({ mentor, skillMatches, onBook, isBooked }) => {
         </div>
       )}
 
-      {/* Book button */}
+      {assignedSkills.length > 0 && (
+        <div style={c.assignedBanner}>
+          <CheckCircle2 size={13} color="#15803D" />
+          <span>Assigned for: {assignedSkills.join(", ")}</span>
+        </div>
+      )}
+
+      <button style={c.assignBtn} onClick={() => onAssign(mentor)}>
+        <UserCheck size={14} /> Assign to {studentName}
+      </button>
       <button
         style={{
           ...c.bookBtn,
@@ -277,7 +348,10 @@ const Mentors = () => {
   const [expertiseFilter, setExpertiseFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("find"); // "find" | "bookings"
   const [bookingMentor, setBookingMentor] = useState(null);
+  const [assignmentMentor, setAssignmentMentor] = useState(null);
+  const [assignmentMessage, setAssignmentMessage] = useState("");
   const [bookings, setBookings] = useState(() => getMentorBookings());
+  const [assignments, setAssignments] = useState(() => getAssignmentsForStudent(student.id));
 
   // All unique expertise tags
   const allExpertise = useMemo(() => {
@@ -315,6 +389,17 @@ const Mentors = () => {
   const handleCancel = (bookingId) => {
     cancelMentorBooking(bookingId);
     setBookings(getMentorBookings());
+  };
+
+  const handleAssign = (mentor) => setAssignmentMentor(mentor);
+
+  const handleConfirmAssignment = (assignmentData) => {
+    const assignment = assignMentorToStudent(assignmentData);
+    setAssignments(getAssignmentsForStudent(student.id));
+    setAssignmentMentor(null);
+    setAssignmentMessage(`Mentor assigned and email notification recorded for ${student.email}.`);
+    window.setTimeout(() => setAssignmentMessage(""), 4500);
+    return assignment;
   };
 
   const bookedMentorIds = bookings.map(b => b.mentorId);
@@ -382,6 +467,9 @@ const Mentors = () => {
         </div>
       ) : (
         <>
+          {assignmentMessage && (
+            <div style={p.assignmentNotice}><Mail size={15} /> {assignmentMessage}</div>
+          )}
           {/* ── Search + Filter ── */}
           <div style={p.searchFilterBar}>
             <div style={p.searchBox}>
@@ -439,7 +527,10 @@ const Mentors = () => {
                     mentor={mentor}
                     skillMatches={skillMatches}
                     onBook={handleBook}
+                    onAssign={handleAssign}
                     isBooked={isBooked}
+                    assignedSkills={assignments.filter((a) => a.mentorId === mentor.id).map((a) => a.skillName)}
+                    studentName={student.name.split(" ")[0]}
                   />
                 );
               })}
@@ -455,6 +546,15 @@ const Mentors = () => {
           onClose={() => setBookingMentor(null)}
           onBook={handleConfirmBook}
           existingBookings={bookings}
+        />
+      )}
+      {assignmentMentor && (
+        <AssignmentModal
+          mentor={assignmentMentor}
+          student={student}
+          gaps={studentSkills.filter((skill) => skill.required > skill.current && !assignments.some((a) => a.skillId === skill.id && a.status === "Active"))}
+          onClose={() => setAssignmentMentor(null)}
+          onAssign={handleConfirmAssignment}
         />
       )}
     </div>
@@ -514,6 +614,11 @@ const p = {
     display: "flex", alignItems: "center", gap: 8,
     backgroundColor: "#FFFBEB", border: "1px solid #FDE68A",
     borderRadius: 10, padding: "10px 16px",
+  },
+  assignmentNotice: {
+    display: "flex", alignItems: "center", gap: 8, color: "#166534",
+    backgroundColor: "#DCFCE7", border: "1px solid #BBF7D0",
+    borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 600,
   },
   mentorGrid: {
     display: "grid",
@@ -575,6 +680,17 @@ const c = {
     border: "none", borderRadius: 10, padding: "10px 16px",
     fontSize: 13, fontWeight: 700, cursor: "pointer",
     transition: "all 0.15s ease", marginTop: 4,
+  },
+  assignBtn: {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+    backgroundColor: "#F5F3FF", color: "#6D28D9",
+    border: "1px solid #DDD6FE", borderRadius: 10, padding: "9px 16px",
+    fontSize: 13, fontWeight: 700, cursor: "pointer",
+  },
+  assignedBanner: {
+    display: "flex", alignItems: "center", gap: 6, color: "#166534",
+    backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0",
+    borderRadius: 8, padding: "7px 10px", fontSize: 12, fontWeight: 600,
   },
 };
 
@@ -672,6 +788,11 @@ const m = {
     justifyContent: "center", gap: 12, padding: "40px 24px",
   },
   successText: { fontSize: 16, fontWeight: 700, color: "#15803D", margin: 0 },
+  formBody: { display: "flex", flexDirection: "column", gap: 8, padding: "18px 24px" },
+  fieldLabel: { fontSize: 12.5, fontWeight: 700, color: "#374151" },
+  select: { border: "1px solid #D1D5DB", borderRadius: 8, padding: "9px 10px", fontSize: 13, backgroundColor: "#fff" },
+  textarea: { border: "1px solid #D1D5DB", borderRadius: 8, padding: "9px 10px", fontSize: 13, minHeight: 70, resize: "vertical", fontFamily: "inherit" },
+  emptyAssignment: { display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "32px 24px", color: "#166534", fontSize: 13 },
 };
 
 export default Mentors;

@@ -1,31 +1,64 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Search, Bell, ChevronDown, Check, GraduationCap } from "lucide-react";
-import { getUnreadCount } from "../../services/storageService";
+import { useState, useRef, useEffect } from "react";
+import { Search, ChevronDown, Check, GraduationCap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useStudent } from "../../context/StudentContext";
 
 const Header = () => {
   const { student: selected, selectStudent, allStudents } = useStudent();
-  const unread      = getUnreadCount();
+  const navigate = useNavigate();
   const [open, setOpen]             = useState(false);
   const [search, setSearch]         = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef                 = useRef(null);
+  const globalSearchRef             = useRef(null);
 
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      const outsideStudentDropdown = dropdownRef.current && !dropdownRef.current.contains(e.target);
+      const outsideGlobalSearch = globalSearchRef.current && !globalSearchRef.current.contains(e.target);
+      if (outsideStudentDropdown && outsideGlobalSearch) {
         setOpen(false);
         setSearch("");
+        setSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const searchTerm = search.trim().toLowerCase();
   const filtered = allStudents.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.id.toLowerCase().includes(search.toLowerCase())
+    s.name.toLowerCase().includes(searchTerm) ||
+    s.id.toLowerCase().includes(searchTerm)
   );
+  const matchingStudents = searchTerm
+    ? allStudents.filter((s) =>
+        s.name.toLowerCase().includes(searchTerm) ||
+        s.id.toLowerCase().includes(searchTerm) ||
+        (s.skills || []).some((skill) =>
+          skill.name.toLowerCase().includes(searchTerm) ||
+          skill.category.toLowerCase().includes(searchTerm)
+        )
+      )
+    : [];
+
+  const openStudentFromSearch = (student) => {
+    selectStudent(student);
+    setSearch("");
+    setSearchOpen(false);
+    navigate("/");
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === "Enter" && matchingStudents[0]) {
+      openStudentFromSearch(matchingStudents[0]);
+    }
+    if (event.key === "Escape") {
+      setSearch("");
+      setSearchOpen(false);
+    }
+  };
 
   const cgpaColor = (cgpa) => {
     if (cgpa >= 8.5) return "#10b981";
@@ -37,26 +70,55 @@ const Header = () => {
     <header style={s.header}>
 
       {/* ── Left: Search ── */}
-      <div style={s.searchBox}>
+      <div style={s.searchBox} ref={globalSearchRef}>
         <Search size={16} color="#9CA3AF" />
         <input
           type="text"
-          placeholder="Search subjects, skills, events..."
+          placeholder="Search a skill to find a student..."
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setSearchOpen(true);
+          }}
+          onFocus={() => setSearchOpen(true)}
+          onKeyDown={handleSearchKeyDown}
           style={s.searchInput}
         />
+        {searchOpen && searchTerm && (
+          <div style={s.globalSearchResults}>
+            {matchingStudents.length === 0 ? (
+              <p style={s.noResult}>No student has that skill.</p>
+            ) : (
+              matchingStudents.map((student) => (
+                <button
+                  key={student.id}
+                  type="button"
+                  style={s.globalSearchItem}
+                  onClick={() => openStudentFromSearch(student)}
+                >
+                  <img src={student.avatar} alt="" style={s.searchAvatar} />
+                  <span>
+                    <strong style={s.searchStudentName}>{student.name}</strong>
+                    <small style={s.searchStudentSkills}>
+                      {(student.skills || [])
+                        .filter((skill) =>
+                          skill.name.toLowerCase().includes(searchTerm) ||
+                          skill.category.toLowerCase().includes(searchTerm)
+                        )
+                        .slice(0, 2)
+                        .map((skill) => skill.name)
+                        .join(", ") || student.id}
+                    </small>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ── Right: Notifications + Student Selector ── */}
+      {/* ── Right: Student Selector ── */}
       <div style={s.right}>
-
-        {/* Notification Bell */}
-        <div style={s.bellWrap}>
-          <Bell size={20} color="#6B7280" />
-          {unread > 0 && (
-            <span style={s.badge}>{unread}</span>
-          )}
-        </div>
-
         {/* ── Student Selector Dropdown ── */}
         <div style={{ position: "relative" }} ref={dropdownRef}>
           <button onClick={() => { setOpen(!open); setSearch(""); }} style={s.selectorBtn}>
@@ -154,7 +216,7 @@ const s = {
 
   // Search
   searchBox: {
-    display: "flex", alignItems: "center", gap: "10px",
+    position: "relative", display: "flex", alignItems: "center", gap: "10px",
     backgroundColor: "#F9FAFB", border: "1px solid #E5E7EB",
     borderRadius: "8px", padding: "9px 16px", width: "320px",
   },
@@ -166,15 +228,20 @@ const s = {
   // Right section
   right: { display: "flex", alignItems: "center", gap: "20px" },
 
-  // Bell
-  bellWrap: { position: "relative", cursor: "pointer", padding: "4px" },
-  badge: {
-    position: "absolute", top: "0", right: "0",
-    backgroundColor: "#EF4444", color: "#fff",
-    fontSize: "10px", fontWeight: 700,
-    width: "16px", height: "16px", borderRadius: "50%",
-    display: "flex", alignItems: "center", justifyContent: "center",
+  globalSearchResults: {
+    position: "absolute", top: "calc(100% + 8px)", left: 0, width: "360px",
+    backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB",
+    borderRadius: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+    overflow: "hidden", zIndex: 200,
   },
+  globalSearchItem: {
+    display: "flex", alignItems: "center", gap: "10px", width: "100%",
+    padding: "10px 12px", border: "none", borderBottom: "1px solid #F3F4F6",
+    backgroundColor: "#FFFFFF", textAlign: "left", cursor: "pointer",
+  },
+  searchAvatar: { width: "30px", height: "30px", borderRadius: "50%" },
+  searchStudentName: { display: "block", fontSize: "12.5px", color: "#111827" },
+  searchStudentSkills: { display: "block", marginTop: "2px", fontSize: "11px", color: "#6B7280" },
 
   // Selector button
   selectorBtn: {

@@ -113,6 +113,14 @@ export const cancelMentorBooking = (bookingId) => {
  */
 export const assignMentorToStudent = (assignment) => {
   const all = getUserState("mentorAssignments") || [];
+  const existing = all.find(
+    (item) =>
+      item.studentId === assignment.studentId &&
+      item.skillId === assignment.skillId &&
+      item.status === "Active"
+  );
+  if (existing) return existing;
+
   const newAssignment = {
     ...assignment,
     id: `MA-${Date.now()}`,
@@ -121,6 +129,7 @@ export const assignMentorToStudent = (assignment) => {
   };
   all.push(newAssignment);
   setUserState("mentorAssignments", all);
+  queueAssignmentEmail(newAssignment);
   return newAssignment;
 };
 
@@ -131,6 +140,28 @@ export const getAssignmentsForStudent = (studentId) => {
   return (getUserState("mentorAssignments") || []).filter(
     (a) => a.studentId === studentId
   );
+};
+
+export const getAssignmentForStudentSkill = (studentId, skillId) =>
+  getAssignmentsForStudent(studentId).find(
+    (assignment) => assignment.skillId === skillId && assignment.status === "Active"
+  );
+
+export const getAssignmentEmails = () => getUserState("assignmentEmails") || [];
+
+const queueAssignmentEmail = (assignment) => {
+  const emails = getAssignmentEmails();
+  emails.push({
+    id: `MAIL-${Date.now()}`,
+    type: "mentor-assignment",
+    to: assignment.studentEmail,
+    subject: `Mentor assigned for ${assignment.skillName}`,
+    body: `You have been assigned ${assignment.mentorName} from ${assignment.mentorCompany} to support your ${assignment.skillName} skill gap.`,
+    assignmentId: assignment.id,
+    sentOn: new Date().toISOString(),
+    status: "Sent",
+  });
+  setUserState("assignmentEmails", emails);
 };
 
 /**

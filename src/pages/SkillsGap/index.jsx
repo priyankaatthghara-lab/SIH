@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -9,6 +9,7 @@ import {
   BookOpen, ExternalLink, Filter, Zap, UserCheck, TrendingUp
 } from "lucide-react";
 import { useStudent } from "../../context/StudentContext";
+import { getAssignmentsForStudent } from "../../services/storageService";
 
 // ── Gap classification ────────────────────────────────────────
 const getGapInfo = (current, required) => {
@@ -20,7 +21,7 @@ const getGapInfo = (current, required) => {
 };
 
 // ── Skill Card (admin view) ───────────────────────────────────
-const SkillCard = ({ skill }) => {
+const SkillCard = ({ skill, assignment }) => {
   const [expanded, setExpanded] = useState(false);
   const gap = skill.required - skill.current;
   const gapInfo = getGapInfo(skill.current, skill.required);
@@ -114,6 +115,14 @@ const SkillCard = ({ skill }) => {
           )}
         </div>
       )}
+      {assignment && (
+        <div style={s.assignedBanner}>
+          <UserCheck size={13} color="#15803D" />
+          <span>
+            Already assigned: <strong>{assignment.mentorName}</strong> ({assignment.mentorCompany})
+          </span>
+        </div>
+      )}
     </div>
   );
 };
@@ -134,9 +143,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // ── Summary Stats ─────────────────────────────────────────────
-const SummaryStrip = ({ skills, studentName }) => {
+const SummaryStrip = ({ skills }) => {
   const met      = skills.filter(sk => sk.required - sk.current <= 0).length;
-  const minor    = skills.filter(sk => { const g = sk.required - sk.current; return g > 0 && g <= 10; }).length;
   const moderate = skills.filter(sk => { const g = sk.required - sk.current; return g > 10 && g <= 20; }).length;
   const critical = skills.filter(sk => sk.required - sk.current > 20).length;
   const avgCurrent = skills.length
@@ -172,6 +180,7 @@ const SkillsGap = () => {
   const { student } = useStudent();
   const skills = student?.skills || [];
   const studentName = student?.name || "Student";
+  const assignments = getAssignmentsForStudent(student?.id);
 
   const categories = useMemo(() => {
     const cats = [...new Set(skills.map(sk => sk.category))];
@@ -225,7 +234,7 @@ const SkillsGap = () => {
       </div>
 
       {/* ── Summary Strip ── */}
-      <SummaryStrip skills={skills} studentName={studentName} />
+      <SummaryStrip skills={skills} />
 
       {/* ── Context info banner (if critical gaps) ── */}
       {criticalGaps.length > 0 && (
@@ -279,7 +288,13 @@ const SkillsGap = () => {
 
       {/* ── Skill Cards Grid ── */}
       <div style={s.skillsGrid}>
-        {filtered.map(sk => <SkillCard key={sk.id} skill={sk} />)}
+        {filtered.map(sk => (
+          <SkillCard
+            key={sk.id}
+            skill={sk}
+            assignment={assignments.find((assignment) => assignment.skillId === sk.id && assignment.status === "Active")}
+          />
+        ))}
         {filtered.length === 0 && (
           <p style={{ color: "#9CA3AF", fontSize: 14, padding: 20 }}>No skills in this category.</p>
         )}
@@ -352,6 +367,9 @@ const SkillsGap = () => {
                   <div style={s.panelItemRight}>
                     <span style={s.redVal}>{sk.current} / {sk.required}</span>
                     <span style={s.redGap}>↑ {sk.required - sk.current} pts deficit</span>
+                    {assignments.some((assignment) => assignment.skillId === sk.id && assignment.status === "Active") && (
+                      <span style={s.assignedSmall}><UserCheck size={11} /> Mentor already assigned</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -499,6 +517,15 @@ const s = {
     backgroundColor: "#F5F3FF", border: "1px solid #DDD6FE",
     borderRadius: 8, padding: "7px 10px",
     fontSize: 12, color: "#5B21B6",
+  },
+  assignedBanner: {
+    display: "flex", alignItems: "center", gap: 6,
+    backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0",
+    borderRadius: 8, padding: "7px 10px", fontSize: 12, color: "#166534",
+  },
+  assignedSmall: {
+    display: "inline-flex", alignItems: "center", gap: 4,
+    color: "#15803D", fontSize: 10.5, fontWeight: 700,
   },
 
   chartCard: {
