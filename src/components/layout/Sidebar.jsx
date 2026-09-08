@@ -1,19 +1,17 @@
-﻿import React from "react";
+import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, TrendingUp, BookOpen, Target,
   Users, Zap, Calendar, Bell, ChevronLeft, ChevronRight
 } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 const navItems = [
-  { path: "/",                      label: "Dashboard",           icon: LayoutDashboard },
-  { path: "/academic-performance",  label: "Academic Performance",icon: TrendingUp },
- 
-  { path: "/skills",                label: "Skills & Skill Gap",  icon: Target },
-  { path: "/mentors",               label: "Mentors",             icon: Users },
-  
- 
- 
+  { path: "/",                      label: "Dashboard",                 icon: LayoutDashboard },
+  { path: "/profile",               label: "Student Profile",           icon: UserRound },
+  { path: "/academic-performance",  label: "Academic Performance",       icon: TrendingUp },
+  { path: "/skills",                label: "Skills & Skill Gap",        icon: Target },
+  { path: "/mentors",               label: "Mentors",                   icon: Users },
 ];
 
 const Sidebar = ({ collapsed, onToggle }) => {

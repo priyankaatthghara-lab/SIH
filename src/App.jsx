@@ -6,6 +6,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 
 // Real Pages
 import Dashboard from './pages/Dashboard';
+import StudentProfile from './pages/StudentProfile';
 import AcademicPerformance from './pages/AcademicPerformance';
 import SkillsGap from './pages/SkillsGap';
 import Mentors from './pages/Mentors';
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<DashboardLayout />}>
             <Route index                        element={<Dashboard />} />
+            <Route path="profile"               element={<StudentProfile />} />
             <Route path="academic-performance"  element={<AcademicPerformance />} />
             <Route path="subjects"              element={<Subjects />} />
             <Route path="skills"               element={<SkillsGap />} />

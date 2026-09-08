@@ -1,424 +1,898 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell
-} from "recharts";
-import {
-  Download, TrendingUp, CheckCircle, XCircle,
-  AlertCircle, Sparkles, BookOpen, Calendar
+  GraduationCap, BookOpen, Users, Building2, Search,
+  Filter, ChevronRight, X, UserRound, ArrowRight,
+  Clock, RotateCcw, Award
 } from "lucide-react";
 import { useStudent } from "../context/StudentContext";
-import { downloadAcademicReport } from "../utils/reportGenerator";
 
-const StatCard = ({ icon, value, max, label, iconBg, iconColor }) => (
-  <div style={s.statCard}>
-    <div style={{ ...s.statIcon, backgroundColor: iconBg, color: iconColor }}>{icon}</div>
-    <div style={s.statValue}>{value}{max && <span style={s.statMax}> / {max}</span>}</div>
-    <div style={s.statLabel}>{label}</div>
-  </div>
-);
+// University Academic Programs
+const UNIVERSITY_COURSES = [
+  {
+    id: "COURSE-BTECH-CSE",
+    code: "B.Tech",
+    name: "Computer Science & Engineering",
+    department: "School of Engineering & Technology",
+    category: "Engineering",
+    level: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    degree: "Bachelor of Technology",
+    totalStudents: 120,
+  },
+  {
+    id: "COURSE-BTECH-AI",
+    code: "B.Tech",
+    name: "Artificial Intelligence & Data Science",
+    department: "School of Engineering & Technology",
+    category: "Engineering",
+    level: "Undergraduate",
+    duration: "4 Years (8 Semesters)",
+    degree: "Bachelor of Technology",
+    totalStudents: 95,
+  },
+  {
+    id: "COURSE-BBA-MKT",
+    code: "BBA",
+    name: "Marketing & Strategy",
+    department: "School of Business & Management",
+    category: "Management",
+    level: "Undergraduate",
+    duration: "3 Years (6 Semesters)",
+    degree: "Bachelor of Business Administration",
+    totalStudents: 110,
+  },
+  {
+    id: "COURSE-MBA-FIN",
+    code: "MBA",
+    name: "Financial Analytics & Investment Banking",
+    department: "School of Business & Management",
+    category: "Management",
+    level: "Postgraduate",
+    duration: "2 Years (4 Semesters)",
+    degree: "Master of Business Administration",
+    totalStudents: 80,
+  },
+  {
+    id: "COURSE-BCA-CLD",
+    code: "BCA",
+    name: "Cloud Computing & Web Applications",
+    department: "Department of Computer Applications",
+    category: "Computer Applications",
+    level: "Undergraduate",
+    duration: "3 Years (6 Semesters)",
+    degree: "Bachelor of Computer Applications",
+    totalStudents: 105,
+  },
+  {
+    id: "COURSE-MCA-SFT",
+    code: "MCA",
+    name: "Software Systems & Architecture",
+    department: "Department of Computer Applications",
+    category: "Computer Applications",
+    level: "Postgraduate",
+    duration: "2 Years (4 Semesters)",
+    degree: "Master of Computer Applications",
+    totalStudents: 65,
+  },
+  {
+    id: "COURSE-BCOM-ACT",
+    code: "B.Com",
+    name: "Accounting, Taxation & Audit",
+    department: "School of Commerce & Finance",
+    category: "Commerce",
+    level: "Undergraduate",
+    duration: "3 Years (6 Semesters)",
+    degree: "Bachelor of Commerce (Honours)",
+    totalStudents: 140,
+  },
+  {
+    id: "COURSE-MCOM-INT",
+    code: "M.Com",
+    name: "International Business & Trade Finance",
+    department: "School of Commerce & Finance",
+    category: "Commerce",
+    level: "Postgraduate",
+    duration: "2 Years (4 Semesters)",
+    degree: "Master of Commerce",
+    totalStudents: 50,
+  },
+  {
+    id: "COURSE-BA-ECO",
+    code: "BA",
+    name: "Economics & Public Policy",
+    department: "School of Humanities & Social Sciences",
+    category: "Humanities",
+    level: "Undergraduate",
+    duration: "3 Years (6 Semesters)",
+    degree: "Bachelor of Arts",
+    totalStudents: 90,
+  },
+  {
+    id: "COURSE-MA-PUB",
+    code: "MA",
+    name: "Public Administration & Governance",
+    department: "School of Humanities & Social Sciences",
+    category: "Humanities",
+    level: "Postgraduate",
+    duration: "2 Years (4 Semesters)",
+    degree: "Master of Arts",
+    totalStudents: 45,
+  },
+];
 
-const MiniBar = ({ value, color }) => (
-  <div style={s.barTrack}>
-    <div style={{ ...s.barFill, width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }} />
-  </div>
-);
+const CATEGORIES = [
+  "All Categories",
+  "Engineering",
+  "Management",
+  "Computer Applications",
+  "Commerce",
+  "Humanities",
+];
 
 const Dashboard = () => {
-  const { student } = useStudent();
+  const { allStudents, selectStudent } = useStudent();
+  const navigate = useNavigate();
 
-  const trendData = (student?.semesterTrends || []).map((sem) => ({
-    name: `Sem ${sem.semester}`,
-    cgpa: sem.sgpa,
-  }));
+  // Horizontal filter states
+  const [courseSearch, setCourseSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedLevel, setSelectedLevel] = useState("ALL");
 
-  const compData = [
-    { name: "Your CGPA", value: student?.currentCgpa ?? 8.7, color: "#3b82f6" },
-    { name: "Dept Avg", value: student?.departmentAvgCgpa ?? 7.9, color: "#93c5fd" },
-    { name: "Your %ile", value: student?.yourPercentileCgpa ?? 8.2, color: "#a855f7" },
-  ];
+  // Modal state for viewing enrolled students
+  const [activeModal, setActiveModal] = useState(null); // { course, students }
 
-  const readinessBars = student?.readinessBars || [
-    { label: "Academics",        val: student?.academicHealthScore ?? 86, color: "#10b981" },
-    { label: "Technical Skills", val: student?.skillReadinessScore ?? 74, color: "#3b82f6" },
-    { label: "Projects",         val: 61, color: "#f59e0b" },
-    { label: "Resume",           val: 92, color: "#8b5cf6" },
-    { label: "Communication",    val: 68, color: "#ef4444" },
-  ];
+  // Filter courses based on search, category, and level
+  const filteredCourses = useMemo(() => {
+    return UNIVERSITY_COURSES.filter((course) => {
+      // Category filter
+      if (selectedCategory !== "All Categories" && course.category !== selectedCategory) {
+        return false;
+      }
 
-  const milestones = [
-    { title: "Semester 6 Begins",       date: "Jan 2026", color: "#10b981" },
-    { title: "Project Submission",       date: "Mar 2026", color: "#10b981" },
-    { title: "End Semester Exams",       date: "Apr 2026", color: "#f59e0b" },
-    { title: "Internship Applications",  date: "May 2026", color: "#8b5cf6" },
-    { title: "Placement Session",        date: "Jan 2027", color: "#6b7280" },
-  ];
+      // Level filter
+      if (selectedLevel !== "ALL" && course.level !== selectedLevel) {
+        return false;
+      }
 
-  const skillCorr = [
-    { subject: "Data Structures",     skills: "DSA, Problem Solving", career: "Software Development" },
-    { subject: "Database Management", skills: "SQL, Data Modeling",   career: "Backend / Data Analyst" },
-    { subject: "Operating Systems",   skills: "Linux, Architecture",  career: "Systems Engineer" },
-    { subject: "Computer Networks",   skills: "Networking, Protocols",career: "Network Engineer" },
-    { subject: "Mathematics",         skills: "Logic, Analysis",      career: "Data Science" },
-  ];
+      // Search query
+      if (courseSearch.trim() !== "") {
+        const query = courseSearch.toLowerCase().trim();
+        const matchesName = course.name.toLowerCase().includes(query);
+        const matchesCode = course.code.toLowerCase().includes(query);
+        const matchesDept = course.department.toLowerCase().includes(query);
+        return matchesName || matchesCode || matchesDept;
+      }
 
-  const strengthBars = (student?.subjects || []).slice(0, 5).map((sub) => {
-    let color = "#10b981";
-    if (sub.marks < 65) color = "#ef4444";
-    else if (sub.marks < 75) color = "#f59e0b";
-    else if (sub.marks < 85) color = "#3b82f6";
+      return true;
+    });
+  }, [courseSearch, selectedCategory, selectedLevel]);
 
-    return {
-      name: sub.name,
-      val: sub.marks,
-      color,
-    };
-  });
+  // Open modal with students for this course
+  const handleOpenStudents = (course) => {
+    const matchedStudents = allStudents.filter((student) => {
+      const progMatch = student.program?.toLowerCase() === course.code.toLowerCase();
+      const branchMatch = student.branch?.toLowerCase().includes(course.name.toLowerCase()) ||
+                          course.name.toLowerCase().includes(student.branch?.toLowerCase() || "");
+      return progMatch || branchMatch;
+    });
 
-  const growthVal = student?.growthScore ?? student?.academicHealthScore ?? 86;
-  const growthImprovement = student?.growthImprovement ?? 12;
-  const readinessVal = student?.internshipScore ?? student?.internshipReadiness ?? 78;
+    const fallback = allStudents.filter((s) => s.program?.toLowerCase() === course.code.toLowerCase());
+    const finalStudents = matchedStudents.length > 0 ? matchedStudents : (fallback.length > 0 ? fallback : allStudents.slice(0, 3));
 
-  // Generate dynamic AI insights based on the selected student
-  const insights = [];
-  if (student?.currentCgpa >= 8.5) {
-    insights.push({ type: "good", text: `Outstanding performance! Current CGPA of ${student.currentCgpa} ranks you in the top tier.` });
-  } else if (student?.currentCgpa >= 7.5) {
-    insights.push({ type: "good", text: `Consistent performance with a CGPA of ${student.currentCgpa}.` });
-  } else {
-    insights.push({ type: "warn", text: `CGPA is currently ${student?.currentCgpa}. Needs focused effort to reach 8.0+.` });
-  }
+    setActiveModal({
+      course,
+      students: finalStudents,
+    });
+  };
 
-  const weakSubject = (student?.subjects || []).find((s) => s.marks < 65);
-  const strongSubject = (student?.subjects || []).find((s) => s.marks >= 85);
+  const handleStudentSelect = (student) => {
+    selectStudent(student);
+    setActiveModal(null);
+    navigate("/profile");
+  };
 
-  if (weakSubject) {
-    insights.push({ type: "bad", text: `Your score in ${weakSubject.name} (${weakSubject.marks}%) is below expected benchmark.` });
-  }
-  if (strongSubject) {
-    insights.push({ type: "good", text: `Strong mastery demonstrated in ${strongSubject.name} with ${strongSubject.marks}%.` });
-  }
+  const resetFilters = () => {
+    setCourseSearch("");
+    setSelectedCategory("All Categories");
+    setSelectedLevel("ALL");
+  };
 
-  if (student?.overallAttendance < 75) {
-    insights.push({ type: "bad", text: `Overall attendance is critically low at ${student.overallAttendance}% (below 75% requirement).` });
-  } else if (student?.overallAttendance >= 90) {
-    insights.push({ type: "good", text: `Excellent attendance record at ${student.overallAttendance}%.` });
-  } else {
-    insights.push({ type: "info", text: `Attendance is steady at ${student?.overallAttendance}%. Maintain it above 80%.` });
-  }
+  const isFiltered = courseSearch.trim() !== "" || selectedCategory !== "All Categories" || selectedLevel !== "ALL";
 
-  const recommendedAction = weakSubject
-    ? `Focus on revising ${weakSubject.name} core concepts and seek faculty mentorship to improve semester grades.`
-    : `Leverage your high marks in ${strongSubject?.name || "core subjects"} to apply for domain-specific internship roles.`;
+  // Summary counts
+  const totalPrograms = UNIVERSITY_COURSES.length;
+  const totalDepartments = new Set(UNIVERSITY_COURSES.map((c) => c.department)).size;
+  const totalEnrolled = UNIVERSITY_COURSES.reduce((acc, c) => acc + (c.totalStudents || 0), 0);
 
   return (
     <div style={s.page}>
-
-      {/* Page Header */}
+      {/* ── Page Header ── */}
       <div style={s.pageHeader}>
         <div>
-          <p style={s.breadcrumb}>Home &rsaquo; Academic Details</p>
-          <h1 style={s.pageTitle}>Academic Details</h1>
-          <p style={s.pageSubtitle}>Track academic progress, discover insights and get personalised recommendations.</p>
+          <p style={s.breadcrumb}>Home &rsaquo; Institute Dashboard</p>
+          <h1 style={s.pageTitle}>Institute Dashboard</h1>
+          <p style={s.pageSubtitle}>
+            Explore university courses, departments, and view enrolled student directories.
+          </p>
         </div>
-        <button style={s.dlBtn} onClick={() => downloadAcademicReport(student)}>
-          <Download size={15} /> Download Academic Report
-        </button>
       </div>
 
-      {/* Row 1 - Profile + 4 Stat Cards */}
-      <div style={s.row1}>
-        <div style={s.profileCard}>
-          <div style={s.profileTop}>
-            <img src={student?.avatar} alt="student" style={s.avatar} />
-            <div style={{ flex: 1 }}>
-              <h2 style={s.studentName}>{student?.name}</h2>
-              <p style={s.studentMeta}>{student?.program} in {student?.branch}</p>
-              <p style={s.studentMeta}>ABC Institute of Technology</p>
-              <p style={s.studentMeta}>Roll No: {student?.id}</p>
-            </div>
-            <span style={s.semBadge}>{student?.semester}th Semester</span>
+      {/* ── Top Summary Cards ── */}
+      <div style={s.summaryGrid}>
+        <div style={s.summaryCard}>
+          <div style={{ ...s.statIcon, backgroundColor: "#EFF6FF", color: "#2563EB" }}>
+            <GraduationCap size={22} />
           </div>
-          <div style={s.quoteBox}>
-            "{student?.motivationalQuote || "Consistent effort leads to great progress."}"
-          </div>
-        </div>
-        <StatCard icon={<TrendingUp size={22} />} value={student?.currentCgpa} max="10"
-          label="Current CGPA" iconBg="#dcfce7" iconColor="#16a34a" />
-        <StatCard icon={<BookOpen size={22} />} value={`${student?.overallAttendance}%`}
-          label="Attendance" iconBg="#dbeafe" iconColor="#2563eb" />
-        <StatCard icon={<AlertCircle size={22} />} value={student?.backlogs}
-          label="Backlogs" iconBg="#f3e8ff" iconColor="#9333ea" />
-        <StatCard icon={<Calendar size={22} />} value={student?.semester} max="8"
-          label="Semester" iconBg="#fef3c7" iconColor="#d97706" />
-      </div>
-
-      {/* Row 2 - CGPA Trend | Growth Score | Rank */}
-      <div style={s.row}>
-        <div style={{ ...s.card, flex: 2 }}>
-          <p style={s.cardTitle}>CGPA Trend</p>
-          <div style={{ height: 220, marginTop: 16 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="cgpaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <YAxis domain={[6, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <Tooltip />
-                <Area type="monotone" dataKey="cgpa" stroke="#3b82f6" strokeWidth={3}
-                  fill="url(#cgpaGrad)" dot={{ r: 5, fill: "#3b82f6" }} />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div>
+            <div style={s.statValue}>{totalPrograms}</div>
+            <div style={s.statLabel}>Total Academic Courses</div>
           </div>
         </div>
 
-        <div style={{ ...s.card, flex: 1.5 }}>
-          <p style={s.cardTitle}>Academic Growth Score</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 20 }}>
-            <svg viewBox="0 0 36 36" style={{ width: 110, height: 110 }}>
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="#e5e7eb" strokeWidth="3" />
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray={`${growthVal}, 100`} />
-              <text x="18" y="17" textAnchor="middle" style={{ fontSize: 10, fontWeight: "bold", fill: "#111827" }}>{growthVal}</text>
-              <text x="18" y="23" textAnchor="middle" style={{ fontSize: 4, fill: "#6b7280" }}>/100</text>
-            </svg>
-            <div style={s.improveBadge}>
-              <TrendingUp size={14} />
-              <span>{growthImprovement >= 0 ? `+${growthImprovement}%` : `${growthImprovement}%`} improvement<br />from last year</span>
-            </div>
+        <div style={s.summaryCard}>
+          <div style={{ ...s.statIcon, backgroundColor: "#F3E8FF", color: "#9333EA" }}>
+            <Building2 size={22} />
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-            {["CGPA Improvement", "Attendance", "No Backlogs", "Course Completion"].map((t) => (
-              <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151" }}>
-                <CheckCircle size={15} color="#10b981" /> {t}
-              </div>
-            ))}
+          <div>
+            <div style={s.statValue}>{totalDepartments}</div>
+            <div style={s.statLabel}>Academic Departments</div>
           </div>
         </div>
 
-        <div style={{ ...s.card, flex: 1.5 }}>
-          <p style={s.cardTitle}>Your Rank &amp; Comparison</p>
-          <div style={{ height: 180, marginTop: 12 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={compData} margin={{ top: 16, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7280" }} />
-                <Tooltip cursor={{ fill: "transparent" }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}
-                  label={{ position: "top", fontSize: 12, fontWeight: "bold" }}>
-                  {compData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        <div style={s.summaryCard}>
+          <div style={{ ...s.statIcon, backgroundColor: "#DCFCE7", color: "#16A34A" }}>
+            <Users size={22} />
           </div>
-          <div style={s.trophyBox}>
-            Ranked #{student?.departmentRank || 1} of {student?.totalStudents || 120} &mdash; better than <strong>{student?.percentile ?? 82}%</strong> of peers!
+          <div>
+            <div style={s.statValue}>{totalEnrolled.toLocaleString()}</div>
+            <div style={s.statLabel}>Enrolled Students</div>
+          </div>
+        </div>
+
+        <div style={s.summaryCard}>
+          <div style={{ ...s.statIcon, backgroundColor: "#FEF3C7", color: "#D97706" }}>
+            <Award size={22} />
+          </div>
+          <div>
+            <div style={s.statValue}>100%</div>
+            <div style={s.statLabel}>Active University Batches</div>
           </div>
         </div>
       </div>
 
-      {/* Row 3 - Subject Strength | Skill-Academic Correlation */}
-      <div style={s.row}>
-        <div style={{ ...s.card, flex: 1 }}>
-          <div style={s.cardHeader}>
-            <p style={s.cardTitle}>Subject Strength Analysis</p>
-            <span style={s.link}>View All</span>
+      {/* ── Horizontal Filter Section ── */}
+      <div style={s.filterSection}>
+        <div style={s.filterHeaderRow}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Filter size={16} color="#3B82F6" />
+            <span style={s.filterHeading}>Filter & Search Courses</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
-            {strengthBars.map((item) => (
-              <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ width: 170, fontSize: 13, color: "#4b5563" }}>{item.name}</span>
-                <MiniBar value={item.val} color={item.color} />
-                <span style={{ width: 30, fontSize: 13, fontWeight: 600, color: "#111827", textAlign: "right" }}>
-                  {(item.val / 10).toFixed(1)}
-                </span>
-              </div>
-            ))}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={s.courseCountPill}>
+              {filteredCourses.length} of {UNIVERSITY_COURSES.length} Courses
+            </span>
+            {isFiltered && (
+              <button onClick={resetFilters} style={s.clearFiltersBtn} title="Reset all filters">
+                <RotateCcw size={13} /> Reset
+              </button>
+            )}
           </div>
         </div>
 
-        <div style={{ ...s.card, flex: 1.8 }}>
-          <div style={s.cardHeader}>
-            <p style={s.cardTitle}>Skill-Academic Correlation</p>
-            <span style={s.link}>How it works?</span>
+        {/* Horizontal Form Row */}
+        <div style={s.filterControlsRow}>
+          {/* Search Input */}
+          <div style={s.searchBox}>
+            <Search size={16} color="#9CA3AF" />
+            <input
+              type="text"
+              placeholder="Search by course name, code, or department..."
+              value={courseSearch}
+              onChange={(e) => setCourseSearch(e.target.value)}
+              style={s.searchInput}
+            />
+            {courseSearch && (
+              <button onClick={() => setCourseSearch("")} style={s.clearInputBtn}>
+                &times;
+              </button>
+            )}
           </div>
-          <table style={s.table}>
-            <thead>
-              <tr>
-                {["Academic Subject", "Relevant Industry Skills", "Career Relevance"].map((h) => (
-                  <th key={h} style={s.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {skillCorr.map((row, i) => (
-                <tr key={i} style={s.tr}>
-                  <td style={s.td}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={s.subIcon}><BookOpen size={13} color="#4f46e5" /></div>
-                      {row.subject}
-                    </div>
-                  </td>
-                  <td style={s.td}>{row.skills}</td>
-                  <td style={s.td}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      {row.career} <span style={{ color: "#9ca3af" }}>&#8250;</span>
-                    </div>
-                  </td>
-                </tr>
+
+          {/* Department / Category Dropdown */}
+          <div style={s.selectGroup}>
+            <label style={s.selectLabel}>Department:</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={s.select}
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
+
+          {/* Degree Level Dropdown */}
+          <div style={s.selectGroup}>
+            <label style={s.selectLabel}>Degree Level:</label>
+            <select
+              value={selectedLevel}
+              onChange={(e) => setSelectedLevel(e.target.value)}
+              style={s.select}
+            >
+              <option value="ALL">All Degrees</option>
+              <option value="Undergraduate">Undergraduate</option>
+              <option value="Postgraduate">Postgraduate</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Row 4 - Internship Readiness | AI Insights | Milestones */}
-      <div style={s.row}>
-        <div style={{ ...s.card, flex: 1 }}>
-          <p style={s.cardTitle}>Internship Readiness Score</p>
-          <div style={{ display: "flex", gap: 20, marginTop: 20, alignItems: "center" }}>
-            <svg viewBox="0 0 36 36" style={{ width: 110, height: 110, flexShrink: 0 }}>
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="#e5e7eb" strokeWidth="3" />
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray={`${readinessVal}, 100`} />
-              <text x="18" y="17" textAnchor="middle" style={{ fontSize: 10, fontWeight: "bold", fill: "#111827" }}>{readinessVal}</text>
-              <text x="18" y="23" textAnchor="middle" style={{ fontSize: 4, fill: "#6b7280" }}>/100</text>
-            </svg>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-              {readinessBars.map((item) => (
-                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 110, fontSize: 12, color: "#4b5563" }}>{item.label}</span>
-                  <MiniBar value={item.val} color={item.color} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1f2937", minWidth: 30, textAlign: "right" }}>
-                    {item.val}%
+      {/* ── Course Cards Grid ── */}
+      {filteredCourses.length > 0 ? (
+        <div style={s.courseGrid}>
+          {filteredCourses.map((course) => {
+            const studentCount = course.totalStudents || 100;
+
+            return (
+              <div key={course.id} style={s.courseCard}>
+                {/* Card Top: Code & Level */}
+                <div style={s.cardTopRow}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={s.courseCodeBadge}>{course.code}</span>
+                    <span style={s.levelBadge}>{course.level}</span>
+                  </div>
+                  <span style={s.durationText}>
+                    <Clock size={12} /> {course.duration}
                   </span>
+                </div>
+
+                {/* Course Name & Department */}
+                <div style={s.courseTitleArea}>
+                  <h3 style={s.courseName}>{course.name}</h3>
+                  <p style={s.deptName}>{course.department}</p>
+                </div>
+
+                {/* Enrolled Students Info */}
+                <div style={s.enrolledInfoBox}>
+                  <Users size={16} color="#3B82F6" />
+                  <span style={s.enrolledText}>
+                    <strong>{studentCount}</strong> Students Enrolled
+                  </span>
+                </div>
+
+                {/* View Students Button */}
+                <button
+                  onClick={() => handleOpenStudents(course)}
+                  style={s.viewStudentsBtn}
+                >
+                  <UserRound size={15} />
+                  <span>View Students</span>
+                  <ChevronRight size={16} style={{ marginLeft: "auto" }} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={s.emptyState}>
+          <Search size={36} color="#9CA3AF" />
+          <h3 style={s.emptyTitle}>No courses found</h3>
+          <p style={s.emptySubtitle}>
+            No academic programs match your search or filter criteria.
+          </p>
+          <button onClick={resetFilters} style={s.emptyResetBtn}>
+            <RotateCcw size={14} /> Clear Filters
+          </button>
+        </div>
+      )}
+
+      {/* ── Enrolled Students Modal (Avatar & Name ONLY) ── */}
+      {activeModal && (
+        <div style={s.modalOverlay} onClick={() => setActiveModal(null)}>
+          <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={s.modalHeader}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={s.modalCodeBadge}>{activeModal.course.code}</span>
+                  <h3 style={s.modalTitle}>{activeModal.course.name}</h3>
+                </div>
+                <p style={s.modalSubtitle}>{activeModal.course.department}</p>
+              </div>
+              <button onClick={() => setActiveModal(null)} style={s.modalCloseBtn}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Info Note */}
+            <div style={s.modalInfoNotice}>
+              <UserRound size={14} color="#3B82F6" />
+              <span>Select any student to view their complete academic profile.</span>
+            </div>
+
+            {/* Students List showing ONLY Avatar and Name */}
+            <div style={s.modalStudentsList}>
+              {activeModal.students.map((student) => (
+                <div
+                  key={student.id}
+                  onClick={() => handleStudentSelect(student)}
+                  style={s.studentItemCard}
+                >
+                  <img
+                    src={student.avatar}
+                    alt={student.name}
+                    style={s.studentAvatar}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={s.studentName}>{student.name}</h4>
+                    <p style={s.studentRoll}>{student.rollNo || student.id}</p>
+                  </div>
+                  <div style={s.viewProfileLink}>
+                    <span>View Profile</span>
+                    <ChevronRight size={15} />
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        <div style={{ ...s.card, flex: 1 }}>
-          <div style={s.cardHeader}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Sparkles size={17} color="#8b5cf6" />
-              <p style={s.cardTitle}>AI Academic Insights</p>
+            {/* Modal Footer */}
+            <div style={s.modalFooter}>
+              <span style={s.modalCountText}>
+                {activeModal.students.length} {activeModal.students.length === 1 ? "Student" : "Students"} Listed
+              </span>
+              <button onClick={() => setActiveModal(null)} style={s.modalDismissBtn}>
+                Close
+              </button>
             </div>
-            <span style={s.betaBadge}>Beta</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
-            {insights.map((ins, i) => (
-              <div key={i} style={s.insightRow}>
-                {ins.type === "good" && <CheckCircle size={15} color="#10b981" style={{ flexShrink: 0 }} />}
-                {ins.type === "bad" && <XCircle size={15} color="#ef4444" style={{ flexShrink: 0 }} />}
-                {(ins.type === "warn" || ins.type === "info") && <AlertCircle size={15} color="#f59e0b" style={{ flexShrink: 0 }} />}
-                <span>{ins.text}</span>
-              </div>
-            ))}
-          </div>
-          <div style={s.recommendBox}>
-            <strong>Recommended Action</strong><br />
-            {recommendedAction}
           </div>
         </div>
-
-        <div style={{ ...s.card, flex: 1 }}>
-          <p style={s.cardTitle}>Upcoming Milestones</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 20 }}>
-            {milestones.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: m.color, marginTop: 4, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "#1f2937" }}>{m.title}</span>
-                <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{m.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
 
+// ── Styles (Matching InternSetu Design System) ──────────────────────────────
 const s = {
-  page:        { display: "flex", flexDirection: "column", gap: 24 },
-  pageHeader:  { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-  breadcrumb:  { fontSize: 13, color: "#6b7280", marginBottom: 6 },
-  pageTitle:   { fontSize: 26, fontWeight: 700, color: "#111827", marginBottom: 4 },
-  pageSubtitle:{ fontSize: 14, color: "#6b7280" },
-  dlBtn: {
-    display: "flex", alignItems: "center", gap: 8,
-    padding: "10px 18px", backgroundColor: "#fff",
-    border: "1px solid #e5e7eb", borderRadius: 8,
-    fontSize: 13, fontWeight: 500, color: "#374151",
-    boxShadow: "0 1px 2px rgba(0,0,0,.05)", cursor: "pointer",
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
   },
-  row1: { display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 20 },
-  profileCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 20,
-    display: "flex", flexDirection: "column", gap: 16,
+  pageHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  breadcrumb: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 6,
+  },
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: 700,
+    color: "#111827",
+    marginBottom: 4,
+  },
+  pageSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  // Summary Cards
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: 18,
+  },
+  summaryCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: "18px 20px",
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
     boxShadow: "0 1px 3px rgba(0,0,0,.06)",
-  },
-  profileTop:  { display: "flex", gap: 14, position: "relative", alignItems: "flex-start" },
-  avatar:      { width: 60, height: 60, borderRadius: "50%", objectFit: "cover", backgroundColor: "#e5e7eb" },
-  studentName: { fontSize: 17, fontWeight: 700, color: "#111827", marginBottom: 4 },
-  studentMeta: { fontSize: 12, color: "#6b7280", marginBottom: 2 },
-  semBadge: {
-    position: "absolute", top: 0, right: 0,
-    backgroundColor: "#eff6ff", color: "#2563eb",
-    fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12,
-  },
-  quoteBox: {
-    backgroundColor: "#f8fafc", padding: "12px 14px",
-    borderRadius: 8, fontSize: 13, color: "#475569",
-    fontStyle: "italic", borderLeft: "3px solid #3b82f6",
-  },
-  statCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 20,
-    display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+    border: "1px solid #E5E7EB",
   },
   statIcon: {
-    width: 46, height: 46, borderRadius: 12,
-    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
-  statValue: { fontSize: 24, fontWeight: 700, color: "#111827" },
-  statMax:   { fontSize: 14, color: "#6b7280", fontWeight: 400 },
-  statLabel: { fontSize: 13, color: "#6b7280", marginTop: 4 },
-  card: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 24,
-    boxShadow: "0 1px 3px rgba(0,0,0,.06)", display: "flex", flexDirection: "column",
+  statValue: {
+    fontSize: 22,
+    fontWeight: 700,
+    color: "#111827",
+    lineHeight: 1.2,
   },
-  row:       { display: "flex", gap: 20 },
-  cardHeader:{ display: "flex", justifyContent: "space-between", alignItems: "center" },
-  cardTitle: { fontSize: 15, fontWeight: 600, color: "#111827" },
-  link:      { fontSize: 13, color: "#3b82f6", cursor: "pointer", fontWeight: 500 },
-  improveBadge: {
-    backgroundColor: "#ecfdf5", color: "#059669",
-    padding: "10px 14px", borderRadius: 8, fontSize: 12,
-    display: "flex", alignItems: "center", gap: 8, fontWeight: 500, lineHeight: 1.5,
+  statLabel: {
+    fontSize: 12.5,
+    color: "#6B7280",
+    marginTop: 2,
   },
-  trophyBox: {
-    marginTop: "auto", backgroundColor: "#f0f9ff",
-    padding: 12, borderRadius: 8, fontSize: 13,
-    color: "#0369a1", fontWeight: 500, textAlign: "center",
+
+  // Horizontal Filter Section
+  filterSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: "18px 22px",
+    boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+    border: "1px solid #E5E7EB",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
   },
-  barTrack: { flex: 1, height: 8, backgroundColor: "#e5e7eb", borderRadius: 4 },
-  barFill:  { height: "100%", borderRadius: 4, transition: "width .4s ease" },
-  table:    { width: "100%", borderCollapse: "collapse", marginTop: 20 },
-  th:       { textAlign: "left", padding: "10px 0", fontSize: 12, color: "#6b7280", fontWeight: 500, borderBottom: "1px solid #e5e7eb" },
-  tr:       { borderBottom: "1px solid #f3f4f6" },
-  td:       { padding: "12px 0", fontSize: 13, color: "#4b5563" },
-  subIcon:  { width: 24, height: 24, borderRadius: 4, backgroundColor: "#e0e7ff", display: "flex", alignItems: "center", justifyContent: "center" },
-  betaBadge:{ backgroundColor: "#f3e8ff", color: "#7e22ce", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 12 },
-  insightRow:{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13, color: "#4b5563", lineHeight: 1.5 },
-  recommendBox: { marginTop: "auto", backgroundColor: "#fffbeb", padding: 16, borderRadius: 8, fontSize: 13, color: "#b45309", lineHeight: 1.6 },
+  filterHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  filterHeading: {
+    fontSize: 14.5,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  courseCountPill: {
+    fontSize: 12,
+    fontWeight: 600,
+    backgroundColor: "#EFF6FF",
+    color: "#2563EB",
+    padding: "3px 10px",
+    borderRadius: 12,
+  },
+  clearFiltersBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#F3F4F6",
+    border: "1px solid #E5E7EB",
+    borderRadius: 8,
+    padding: "4px 10px",
+    fontSize: "12px",
+    fontWeight: 500,
+    color: "#4B5563",
+    cursor: "pointer",
+  },
+
+  // Horizontal Filter Controls Row
+  filterControlsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    flexWrap: "wrap",
+  },
+  searchBox: {
+    flex: "1 1 300px",
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#F9FAFB",
+    border: "1px solid #D1D5DB",
+    borderRadius: 8,
+    padding: "8px 14px",
+  },
+  searchInput: {
+    border: "none",
+    background: "transparent",
+    outline: "none",
+    fontSize: "13.5px",
+    color: "#111827",
+    width: "100%",
+  },
+  clearInputBtn: {
+    background: "transparent",
+    border: "none",
+    fontSize: 16,
+    color: "#9CA3AF",
+    cursor: "pointer",
+  },
+  selectGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  selectLabel: {
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#4B5563",
+    whiteSpace: "nowrap",
+  },
+  select: {
+    backgroundColor: "#F9FAFB",
+    border: "1px solid #D1D5DB",
+    borderRadius: 8,
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#1F2937",
+    outline: "none",
+    cursor: "pointer",
+  },
+
+  // Course Cards Grid
+  courseGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: 20,
+  },
+  courseCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 22,
+    boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+    border: "1px solid #E5E7EB",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  },
+  cardTopRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  courseCodeBadge: {
+    backgroundColor: "#EFF6FF",
+    color: "#2563EB",
+    fontSize: "12px",
+    fontWeight: 700,
+    padding: "3px 9px",
+    borderRadius: 6,
+  },
+  levelBadge: {
+    backgroundColor: "#F3E8FF",
+    color: "#9333EA",
+    fontSize: "11px",
+    fontWeight: 600,
+    padding: "3px 8px",
+    borderRadius: 6,
+  },
+  durationText: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: "11.5px",
+    color: "#6B7280",
+    fontWeight: 500,
+  },
+  courseTitleArea: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  courseName: {
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "#111827",
+    lineHeight: 1.3,
+  },
+  deptName: {
+    fontSize: "12.5px",
+    color: "#6B7280",
+  },
+  enrolledInfoBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#F9FAFB",
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #F3F4F6",
+  },
+  enrolledText: {
+    fontSize: "13px",
+    color: "#374151",
+  },
+  viewStudentsBtn: {
+    marginTop: "auto",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#3B82F6",
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: 8,
+    padding: "10px 16px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
+  },
+
+  // Empty State
+  emptyState: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: "48px 24px",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid #E5E7EB",
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#111827",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    maxWidth: 400,
+    marginBottom: 16,
+  },
+  emptyResetBtn: {
+    padding: "8px 16px",
+    backgroundColor: "#3B82F6",
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: 8,
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  // Modal (Avatar & Name ONLY)
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(17, 24, 39, 0.6)",
+    backdropFilter: "blur(3px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    padding: 20,
+  },
+  modalBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    width: "100%",
+    maxWidth: "500px",
+    maxHeight: "85vh",
+    display: "flex",
+    flexDirection: "column",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+    overflow: "hidden",
+  },
+  modalHeader: {
+    padding: "20px 24px 14px",
+    borderBottom: "1px solid #E5E7EB",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  modalCodeBadge: {
+    backgroundColor: "#EFF6FF",
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: 700,
+    padding: "2px 7px",
+    borderRadius: 4,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  modalSubtitle: {
+    fontSize: 12.5,
+    color: "#6B7280",
+  },
+  modalCloseBtn: {
+    background: "#F3F4F6",
+    border: "none",
+    borderRadius: "50%",
+    width: 32,
+    height: 32,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#6B7280",
+    cursor: "pointer",
+  },
+  modalInfoNotice: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#EFF6FF",
+    padding: "10px 24px",
+    fontSize: 12,
+    color: "#1D4ED8",
+    fontWeight: 500,
+    borderBottom: "1px solid #DBEAFE",
+  },
+  modalStudentsList: {
+    padding: "14px 20px",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  studentItemCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    padding: "12px 16px",
+    borderRadius: 12,
+    backgroundColor: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    cursor: "pointer",
+    transition: "all 0.15s ease",
+  },
+  studentAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: "50%",
+    backgroundColor: "#E0E7FF",
+    objectFit: "cover",
+    border: "2px solid #FFFFFF",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    flexShrink: 0,
+  },
+  studentName: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111827",
+  },
+  studentRoll: {
+    fontSize: 11.5,
+    color: "#6B7280",
+    marginTop: 1,
+  },
+  viewProfileLink: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#3B82F6",
+  },
+  modalFooter: {
+    padding: "14px 24px",
+    borderTop: "1px solid #E5E7EB",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+  },
+  modalCountText: {
+    fontSize: 12.5,
+    color: "#6B7280",
+    fontWeight: 500,
+  },
+  modalDismissBtn: {
+    padding: "7px 16px",
+    backgroundColor: "#E5E7EB",
+    color: "#374151",
+    border: "none",
+    borderRadius: 8,
+    fontSize: "12.5px",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
 };
 
 export default Dashboard;
