@@ -14,9 +14,9 @@ const navItems = [
   { path: "/mentors",               label: "Mentors",                   icon: Users },
 ];
 
-const Sidebar = ({ collapsed, onToggle }) => {
+const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }) => {
   return (
-    <aside style={{
+    <aside className={`sidebar-container ${mobileOpen ? 'mobile-open' : ''}`} style={{
       ...s.sidebar,
       width: collapsed ? "72px" : "260px",
     }}>
@@ -49,6 +49,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
             to={item.path}
             end={item.path === "/"}
             title={collapsed ? item.label : undefined}
+            onClick={() => onMobileClose && onMobileClose()}
             style={({ isActive }) => ({
               ...s.navItem,
               justifyContent: collapsed ? "center" : "flex-start",

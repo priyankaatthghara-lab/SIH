@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, GraduationCap } from "lucide-react";
+import { Search, GraduationCap, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStudent } from "../../context/StudentContext";
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const { selectStudent, allStudents } = useStudent();
   const navigate = useNavigate();
   const [search, setSearch]         = useState("");
@@ -53,10 +53,18 @@ const Header = () => {
   };
 
   return (
-    <header style={s.header}>
-      {/* ── Left: Global Search ── */}
-      <div style={s.searchBox} ref={globalSearchRef}>
-        <Search size={16} color="#9CA3AF" />
+    <header className="header-container" style={s.header}>
+      {/* ── Left: Hamburger Menu (Mobile) & Global Search ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <button 
+          className="mobile-menu-btn" 
+          onClick={onMenuClick}
+          style={{ background: "none", border: "none", cursor: "pointer", display: "none" }}
+        >
+          <Menu size={24} color="#111827" />
+        </button>
+        <div className="header-searchbox" style={s.searchBox} ref={globalSearchRef}>
+          <Search size={16} color="#9CA3AF" />
         <input
           type="text"
           placeholder="Search students, skills, or programs..."
@@ -94,9 +102,10 @@ const Header = () => {
           </div>
         )}
       </div>
+      </div>
 
       {/* ── Right: Institute Logo Only ── */}
-      <div style={s.right}>
+      <div className="header-right" style={s.right}>
         <div style={s.instituteBadge}>
           <div style={s.instituteLogoCircle}>
             <GraduationCap size={22} color="#FFFFFF" />

@@ -209,6 +209,8 @@ const styles = {
     paddingTop: "16px",
     borderTop: "1px solid #F1F5F9",
     display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
     justifyContent: "space-around",
     alignItems: "center",
     backgroundColor: "#F8FAFC",

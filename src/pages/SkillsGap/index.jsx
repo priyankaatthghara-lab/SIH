@@ -424,7 +424,7 @@ const SkillsGap = () => {
 // ── Styles ────────────────────────────────────────────────────
 const s = {
   page: { display: "flex", flexDirection: "column", gap: 24, paddingBottom: 40 },
-  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
+  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" },
   breadcrumb: { fontSize: 13, color: "#6B7280", marginBottom: 4 },
   homeLink: { color: "#2563EB", textDecoration: "none", fontWeight: 500 },
   pageTitle: { fontSize: 26, fontWeight: 700, color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.5px" },
@@ -432,7 +432,7 @@ const s = {
 
   summaryStrip: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
     gap: 12,
   },
   summaryItem: {
@@ -460,7 +460,7 @@ const s = {
     border: "none", padding: "6px 14px", borderRadius: 8,
     fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
   },
-  sortGroup: { display: "flex", alignItems: "center", gap: 6 },
+  sortGroup: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" },
   sortLabel: { fontSize: 12, color: "#6B7280", fontWeight: 500 },
   sortBtn: {
     padding: "5px 10px", borderRadius: 7,
@@ -469,7 +469,7 @@ const s = {
 
   skillsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
     gap: 14,
   },
   skillCard: {
@@ -480,7 +480,7 @@ const s = {
     userSelect: "none",
   },
   skillCardTop: {
-    display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8,
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap"
   },
   skillLeft: { display: "flex", flexDirection: "column", gap: 4 },
   skillName: { fontSize: 14.5, fontWeight: 700, color: "#111827" },
@@ -545,7 +545,7 @@ const s = {
 
   twoCol: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 16,
   },
   panelCard: {
