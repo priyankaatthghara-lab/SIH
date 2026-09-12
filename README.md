@@ -1,4 +1,4 @@
-# 🎓 InternSetu — Academia–Industry Bridge & Academic Portal
+# 🎓 InternSetu — Academia– Student Bridge & Academic Portal
 
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -7,264 +7,187 @@
 [![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-1.41-F56565?style=for-the-badge&logo=lucide&logoColor=white)](https://lucide.dev/)
 [![Storage](https://img.shields.io/badge/Persistence-LocalStorage-F59E0B?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
 
-> **InternSetu** is an intelligent, full-featured academic and industry bridge platform designed for the **Smart India Hackathon (SIH)**. It enables university administrators, faculty, and students to track holistic academic performance, detect learning risks, identify industry skill gaps, and connect students directly with expert industry mentors.
+
+### Student Internship Readiness & University–Industry Collaboration Platform
+
+Internsetu is a platform designed to help **universities evaluate student performance, measure internship readiness, compare students, and make better internship selection decisions**.
+
+The platform also focuses on students who are not selected by helping them **identify their skill gaps and connect with industry mentors** from companies collaborating with the university.
 
 ---
 
-## 📌 Table of Contents
+## 💡 Problem
 
-- [Key Highlights](#-key-highlights)
-- [System Architecture & Modules](#-system-architecture--modules)
-  - [1. Institute Dashboard](#1-institute-dashboard-)
-  - [2. 360° Student Profile](#2-360-student-profile-)
-  - [3. Academic Performance Analytics](#3-academic-performance-analytics-)
-  - [4. Skills & Skill Gap Diagnostics](#4-skills--skill-gap-diagnostics-)
-  - [5. Industry Mentors & Assignment Hub](#5-industry-mentors--assignment-hub-)
-- [Technology Stack](#-technology-stack)
-- [Intelligent Algorithms & Novelty Features](#-intelligent-algorithms--novelty-features)
-- [Project Directory Structure](#-project-directory-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation & Setup](#installation--setup)
-  - [Available Scripts](#available-scripts)
-- [Data Layer & Persistence Model](#-data-layer--persistence-model)
-- [Roadmap & Future Extensions](#-roadmap--future-extensions)
+Universities often rely on marks or manual evaluation when selecting students for internships. Students who are not selected may also have little visibility into **where they are lacking or how they can improve**.
+
+Campus2Career addresses this by creating a continuous system for:
+
+**Evaluate → Compare → Select → Identify Gaps → Mentor → Improve**
 
 ---
 
-## ✨ Key Highlights
+## 🚀 Key Features
 
-- 🏢 **Multi-Faculty & Course Directory**: Institute-level visibility across **Engineering (B.Tech)**, **Management (BBA, MBA)**, **Computer Applications (BCA, MCA)**, **Commerce (B.Com, M.Com)**, and **Humanities (BA, MA)**.
-- 🎯 **Skill Gap Diagnostics**: Real-time gap analysis comparing student academic competencies against modern industry benchmarks.
-- 🧑‍🏫 **Faculty Mentor Assignment**: Direct matching of struggling students with vetted corporate mentors with built-in duplicate assignment protection and simulated email notifications.
-- 📊 **Rich Interactive Visualizations**: Performance trends, percentile ranks, attendance analytics, and dynamic SVG gauges powered by Recharts.
-- 🤖 **AI-Driven Academic Insights**: Automatic rule-based generation of strengths, academic risk alerts, and personalized career recommendations.
-- 📄 **One-Click Academic Report Generator**: Instant downloadable academic health summaries.
-- ⚡ **Zero-Backend Lightweight Architecture**: Complete client-side state management with instant hydration from browser `LocalStorage`.
+### 📊 Student Performance
 
----
+* View and analyze student performance.
+* Track academic and skill-related progress.
+* Get an overall view of internship readiness.
 
-## 🏛 System Architecture & Modules
+### ⚖️ Student Comparison
 
-```
-                    ┌─────────────────────────────────────────────────────────┐
-                    │                   InternSetu Portal                     │
-                    └────────────────────────────┬────────────────────────────┘
-                                                 │
-            ┌─────────────────────┬──────────────┴───────┬────────────────────┬─────────────────────┐
-            │                     │                      │                    │                     │
-    ┌───────▼────────┐   ┌────────▼─────────┐   ┌────────▼────────┐   ┌───────▼─────────┐   ┌───────▼─────────┐
-    │   Institute    │   │  360° Student    │   │    Academic     │   │  Skills & Skill │   │    Industry     │
-    │   Dashboard    │   │     Profile      │   │   Performance   │   │  Gap Diagnostics│   │  Mentorship Hub │
-    │      (/)       │   │    (/profile)    │   │  (/performance) │   │    (/skills)    │   │   (/mentors)    │
-    └────────────────┘   └──────────────────┘   └─────────────────┘   └─────────────────┘   └─────────────────┘
-```
+* Compare two students based on their performance.
+* Identify strengths and weaknesses.
+* Help universities make more informed internship selections.
 
-### 1. Institute Dashboard (`/`)
-- **University Overview**: Metric cards displaying Total Academic Courses, Departments, Total Enrolled Students, and Active University Batches.
-- **Horizontal Search & Filter Bar**: Instant filtering by course name, department discipline (Engineering, Management, Computer Applications, Commerce, Humanities), and degree level (Undergraduate / Postgraduate).
-- **Course Directory Cards**: Displays course title, department, duration, and enrolled student counts.
-- **Privacy-Conscious Student Directory**: Clicking **"View Students"** opens a lightweight modal displaying enrolled students with **avatar and name only** for privacy-compliant quick access.
+### 🎯 Internship Readiness
 
-### 2. 360° Student Profile (`/profile`)
-- **Profile Summary**: Student metadata, avatar, roll number, semester badge, and personal motto.
-- **Corner Quick-Switcher**: Compact horizontal scrollable student switcher located in the top-right corner to easily toggle between student records across all institute departments.
-- **Academic KPI Cards**: Real-time display of CGPA, Overall Attendance %, Active Backlogs count, and Current Semester.
-- **CGPA Trend & Growth Score**: Interactive spline area chart illustrating semester-by-semester SGPA progression alongside an SVG circular gauge indicating the student's *Academic Growth Score*.
-- **Department Rank & Comparison**: Visual bar comparison showing the student's CGPA vs. the Department Average and Peer Percentile.
-- **Subject Strength Analysis**: Color-coded proficiency progress bars for each registered subject.
-- **Skill-Academic Correlation Matrix**: Maps theoretical subjects to industry-relevant technical competencies and career pathways.
-- **AI Academic Insights**: Dynamic diagnostic recommendations suggesting revisions for weak areas and internship applications for strong subjects.
-- **Downloadable Academic Report**: Generates formatted student summary reports.
+* Evaluate how prepared a student is for internship opportunities.
+* Consider multiple performance factors rather than only academic marks.
 
-### 3. Academic Performance Analytics (`/academic-performance`)
-- In-depth semester-wise breakdown with credit points and grades.
-- Class distribution charts comparing student scores with class benchmarks.
-- Subject-by-subject strength and weakness categorization.
-- Interactive student-to-student comparison modal.
+### 🔍 Skill Gap Analysis
 
-### 4. Skills & Skill Gap Diagnostics (`/skills`)
-- Categorized skill breakdown (Core CS, AI/ML, Frontend, Backend, Database, Architecture, Tools, Soft Skills).
-- Visual skill gap indicator comparing student proficiency against industry requirements (`Gap = Required - Current`).
-- Direct action link to assign a qualified mentor for specific skill deficits.
+* Students who don't get selected can understand where they are lacking.
+* Identify skills that need improvement.
+* Provide a clear direction for further development.
 
-### 5. Industry Mentors & Assignment Hub (`/mentors`)
-- Comprehensive mentor directory with company affiliation, years of experience, ratings, and skill specializations.
-- **College-to-Student Assignment Workflow**: Assigns a mentor to address a student's particular skill gap with custom faculty notes.
-- **Duplicate Protection**: Prevents duplicate active assignments for the same student and skill.
-- **Simulated Outbox**: Records automated notification emails in the local mock outbox.
+### 🧑‍🏫 Industry Mentorship
+
+* Universities can assign mentors to students based on their skill gaps.
+* Mentors can come from companies collaborating with the university.
+* Students receive industry-oriented guidance to improve their skills.
+
+### 🏢 University–Industry Collaboration
+
+* Universities can associate with multiple companies.
+* Build a stronger industry network.
+* Connect students with internship opportunities and industry professionals.
 
 ---
 
-## 🛠 Technology Stack
-
-### Frontend Core
-| Technology | Version | Purpose |
-| :--- | :--- | :--- |
-| **React** | `^19.2.8` | Declarative UI component library with Hooks and modern Context API |
-| **Vite** | `^8.2.2` | High-performance build tool and lightning-fast HMR dev server |
-| **React Router DOM** | `^7.18.3` | Client-side routing with nested layouts and active navigation tracking |
-| **JavaScript (ES6+)** | Modern | Clean, modular JavaScript logic with async storage abstraction |
-
-### Data Visualization & Icons
-| Library | Version | Purpose |
-| :--- | :--- | :--- |
-| **Recharts** | `^3.10.1` | Composable charting library (`AreaChart`, `BarChart`, `ResponsiveContainer`, etc.) |
-| **Lucide React** | `^1.41.0` | Sleek, customizable icons throughout all navigation and data cards |
-
-### State & Storage Architecture
-| Component | Architecture | Purpose |
-| :--- | :--- | :--- |
-| **`StudentContext`** | React Context + Hooks | Global active student state provider across all modules |
-| **`storageService`** | LocalStorage Layer | Centralized CRUD service with local database initialization and seed fallbacks |
-
----
-
-## 🧠 Intelligent Algorithms & Novelty Features
-
-```javascript
-// 1. Academic Risk Detection Algorithm (Rule-Based Engine)
-detectAcademicRisks(studentProfile) => [
-  AttendanceRisk (< 75%),
-  PerformanceRisk (Subject marks < 60%),
-  DecliningCGPA (2 consecutive semester drops),
-  CriticalSkillGap ((Required - Current) > 20)
-]
-
-// 2. Opportunity & Skill Match Scoring
-computeMatchScore(studentSkills, requiredSkills) => 
-  Math.round((matchedSkills.length / requiredSkills.length) * 100)
-
-// 3. Automated Personalized Recommendations
-generateRecommendations(studentProfile) => 
-  Domain-specific career & course advice tailored to highest & lowest subject scores
-```
-
----
-
-## 📂 Project Directory Structure
+## 🔄 How It Works
 
 ```text
-internsetu2/
-├── public/
-│   └── favicon.svg              # Application favicon
-├── src/
-│   ├── assets/                  # Static assets and media
-│   ├── components/
-│   │   └── layout/
-│   │       ├── DashboardLayout.jsx  # Main portal wrapper layout
-│   │       ├── Header.jsx           # Top header with global search & institute emblem
-│   │       └── Sidebar.jsx          # Collapsible navigation sidebar
-│   ├── context/
-│   │   └── StudentContext.jsx   # Global student provider with persistence
-│   ├── data/
-│   │   ├── allStudentsDb.js     # Multi-program institute student database
-│   │   └── mockDb.js            # Initial database schema and seed data
-│   ├── pages/
-│   │   ├── AcademicPerformance/ # In-depth academic performance analytics
-│   │   │   ├── AcademicInsights.jsx
-│   │   │   ├── AcademicSummaryCards.jsx
-│   │   │   ├── ClassComparison.jsx
-│   │   │   ├── CompareStudentModal.jsx
-│   │   │   ├── PerformanceTrendChart.jsx
-│   │   │   └── index.jsx
-│   │   ├── Dashboard.jsx        # Institute Course Directory & Overview
-│   │   ├── Mentors/             # Industry mentor directory & assignment
-│   │   │   └── index.jsx
-│   │   ├── SkillsGap/           # Skill diagnostics & industry benchmarking
-│   │   │   └── index.jsx
-│   │   └── StudentProfile.jsx   # Full 360° individual student profile
-│   ├── services/
-│   │   └── storageService.js    # LocalStorage CRUD & business logic service
-│   ├── utils/
-│   │   └── reportGenerator.js   # PDF / Text academic summary generator
-│   ├── App.css                  # Global application styling
-│   ├── App.jsx                  # Main routes declaration
-│   ├── index.css                # Base typography and CSS resets
-│   └── main.jsx                 # React root entry point
-├── package.json                 # Project dependencies and build scripts
-├── vite.config.js               # Vite bundler configuration
-└── README.md                    # Project documentation
+Student Performance
+        ↓
+Internship Readiness
+        ↓
+Compare Students
+        ↓
+Internship Selection
+        ↓
+     ┌───┴───┐
+     ↓       ↓
+ Selected   Not Selected
+     ↓       ↓
+ Internship Skill Gap Analysis
+             ↓
+       Mentor Assignment
+             ↓
+       Skill Development
+             ↓
+      Future Opportunities
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Tech Stack
 
-### Prerequisites
-- **Node.js**: `v18.0.0` or higher
-- **npm**: `v9.0.0` or higher
+### Frontend
 
-### Installation & Setup
+* **React.js**
+* **JavaScript**
+* **HTML5**
+* **CSS3**
+* **Tailwind CSS**
+* **Lucide React Icons**
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/internsetu2.git
-   cd internsetu2
-   ```
-
-2. **Install project dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start the local development server**:
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the application**:
-   Open your browser and navigate to:
-   ```text
-   http://localhost:5173
-   ```
-
-### Available Scripts
-
-| Command | Action |
-| :--- | :--- |
-| `npm run dev` | Starts the Vite development server with Hot Module Replacement (HMR) |
-| `npm run build` | Compiles and bundles production-optimized assets into `/dist` |
-| `npm run preview` | Locally previews the production build |
-| `npm run lint` | Runs ESLint to verify code quality and style consistency |
+The interface uses a **responsive, component-based design** with reusable React components and Tailwind CSS for styling.
 
 ---
 
-## 💾 Data Layer & Persistence Model
-
-All application data is securely initialized and persisted in browser `LocalStorage` under the key:
+## 📂 Project Structure
 
 ```text
-sih_student_portal_db
+src/
+├── components/
+├── pages/
+├── assets/
+├── App.jsx
+└── main.jsx
 ```
 
-The data structure includes:
-- **`studentProfile`**: Active student metadata, semester trends, subjects, and digital portfolio.
-- **`mentors`**: Directory of industry professionals with domains and ratings.
-- **`opportunities`**: Internship and industry project postings with required skill sets.
-- **`events`**: Technical hackathons, workshops, and recruitment webinars.
-- **`userState`**: Dynamic session data including `mentorAssignments`, `mentorBookings`, `notifications`, and `assignmentEmails`.
+---
 
-> 💡 **Tip:** To reset all mock data back to factory defaults at any time, run `localStorage.clear()` in your browser console and refresh the page.
+## ⚙️ Installation & Setup
+
+### 1. Clone the repository
+
+```bash
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+```
+
+### 2. Navigate to the project
+
+```bash
+cd <PROJECT_FOLDER>
+```
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+Open the local URL shown in the terminal to view the application.
 
 ---
 
-## 🔮 Roadmap & Future Extensions
+## 🎯 Project Goal
 
-- [ ] **Backend Integration**: Plug-and-play RESTful / GraphQL API endpoints using Node.js/Express or FastAPI.
-- [ ] **Authentication & RBAC**: Role-Based Access Control distinguishing Student, Faculty/Dean, and Industry Mentor logins.
-- [ ] **Live Video Mentorship**: WebRTC-based 1-on-1 virtual mentoring sessions.
-- [ ] **Real-Time Notification Engine**: Push notifications and SMTP email delivery for mentor assignment alerts.
-- [ ] **Automated Resume Parsing**: Extracting student skills automatically from uploaded PDF resumes.
+The goal of Campus2Career is to move beyond simply **selecting students for internships** and instead create a system where every student gets an opportunity to understand their weaknesses, receive guidance, improve their skills, and become ready for future opportunities.
+
+> **Evaluate. Compare. Mentor. Improve. Connect.**
 
 ---
 
-## 📄 License
+## 👩‍💻 My Contribution
 
-This project is developed for educational and hackathon demonstration purposes under the **MIT License**.
+I primarily worked on the **frontend development and UI/UX** of the platform.
+
+My work included:
+
+* Building React components and pages
+* Designing student performance dashboards
+* Creating student comparison interfaces
+* Designing internship-readiness and skill-gap sections
+* Implementing mentorship workflows
+* Building responsive layouts using Tailwind CSS
+* Using Lucide icons for consistent UI
+* Creating an intuitive and user-friendly experience
+
+This project helped me strengthen my skills in **React, JavaScript, Tailwind CSS, responsive design, component-based development, and real-world product thinking.**
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️ for <strong>Smart India Hackathon (SIH)</strong> &middot; Empowering the Next Generation of Industry-Ready Engineers</sub>
-</div>
+## 🔮 Future Scope
+
+* AI-based resume and skill analysis
+* Intelligent internship matching
+* Automated ATS evaluation
+* Advanced university analytics
+* Company dashboards
+* AI-powered career recommendations
+* Expanded industry mentor network
+
+---
+
+### ⭐ Campus2Career
+
+**Connecting Universities, Students, Mentors & Industry to build a more internship-ready generation.**
